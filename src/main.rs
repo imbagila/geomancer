@@ -1,33 +1,24 @@
-use std::error::Error;
+use teloxide::prelude::*;
 
-fn send_message_to_chat(bot_username: &str) -> Result<(), Box<dyn Error>> {
-    // Set up your bot's API token and the chat ID to send a message to
-    let api_token = "YOUR_API_TOKEN";
-    let chat_id = "YOUR_CHAT_ID";
+// Use Jemalloc only for musl-64 bits platforms
+#[cfg(all(target_env = "musl", target_pointer_width = "64"))]
+#[global_allocator]
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-    // Set up the message you want to send
-    let message = "Hello from my bot!";
+#[tokio::main]
+async fn main() {
+    let bot_token = env!("BOT_TOKEN");
+    let bot = Bot::new(bot_token);
 
-    // Set up the request URL
-    let url = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}",
-        api_token, chat_id, message
-    );
-
-    // Send the request using ureq
-    let response = ureq::get(&url).call()?;
-
-    // Check if the request was successful
-    if response.status().is_success() {
-        println!("Message sent successfully!");
-    } else {
-        println!("Error sending message: {:?}", response);
-    }
-
-    Ok(())
-}
-
-fn main() {
-    let bot_username = "YOUR_BOT_USERNAME";
-    send_message_to_chat(bot_username).unwrap();
+    teloxide::repl(bot, |bot: Bot, msg: Message| async move {
+        let bot_username = env!("BOT_USERNAME");
+        if msg.text().unwrap().contains(bot_username)
+            && (msg.chat.is_group() || msg.chat.is_supergroup())
+        {
+            let message = format!("{}\n\ncc {}", env!("BOT_MESSAGE"), env!("BOT_MEMBERS"));
+            bot.send_message(msg.chat.id, message).await?;
+        }
+        Ok(())
+    })
+    .await;
 }

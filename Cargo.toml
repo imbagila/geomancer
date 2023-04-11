@@ -3,6 +3,10 @@ name = "geomancer"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+teloxide = { version = "0.12.2", features = ["macros"] }
+tokio = { version = "1.27", features = ["rt-multi-thread", "macros"] }
+openssl = { version = "0.10.32", features = ["vendored"] }
+
+[target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
+tikv-jemallocator = "0.5.0"
